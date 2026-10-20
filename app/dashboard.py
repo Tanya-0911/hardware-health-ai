@@ -1,4 +1,4 @@
-
+from diagnostics import analyze_readings
 import time
 from pathlib import Path
 
@@ -90,6 +90,40 @@ else:
 st.subheader("Recent readings")
 st.dataframe(df.tail(20), use_container_width=True)
 
-# Refresh periodically while the dashboard is open
-time.sleep(3)
-st.rerun()
+# # Refresh periodically while the dashboard is open
+# time.sleep(3)
+# st.rerun()
+
+
+st.divider()
+st.subheader("🤖 Hardware Failure Analysis Assistant")
+
+st.caption("Rule-based diagnostic assistant — no paid API calls.")
+
+if st.button("Generate Diagnostic Report", type="primary"):
+    latest_reading = df.iloc[-1]
+
+    report_data = {
+        "voltage_v": latest_reading["voltage_v"],
+        "current_ma": latest_reading["current_ma"],
+        "power_mw": latest_reading["power_mw"],
+        "temperature_c": latest_reading["temperature_c"],
+        "status": latest_reading["status"],
+        "anomaly_detected": bool(
+            latest_reading.get("anomaly", False)
+        ),
+    }
+
+    report = analyze_readings(
+        report_data,
+        data_source="simulated",
+    )
+
+    st.markdown(report)
+
+    st.download_button(
+        label="Download Diagnostic Report",
+        data=report,
+        file_name="hardware_diagnostic_report.md",
+        mime="text/markdown",
+    )

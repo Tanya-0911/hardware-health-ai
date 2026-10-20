@@ -1,0 +1,6 @@
+scenario,voltage_v,current_ma,temperature_c,expected_finding,passed
+normal,5.0,100,30,none,True
+high_current,5.0,190,30,current,True
+high_temperature,5.0,100,40,temperature,True
+low_voltage,4.6,100,30,voltage,True
+combined_fault,4.6,190,40,current_temperature_voltage,True
