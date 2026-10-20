@@ -1,52 +1,364 @@
-GenAI-Based Smart Hardware Health Monitoring and Failure Analysis Assistant
+# Smart Hardware Health Monitor & Failure Analysis Assistant
 
-Project status: Design and implementation roadmap. The hardware, firmware, trained model, dashboard, and performance results are not yet complete. This README describes the intended prototype and defines what should be demonstrated before making accuracy claims.
+**An embedded systems and hardware diagnostics project combining sensor telemetry, anomaly detection, rule-based fault analysis, and an interactive monitoring dashboard.**
 
-Why build it? Hardware faults often produce indirect symptoms: a rise in current, a voltage drop, a hot component, or unusual vibration. A single threshold can flag one symptom but rarely explains the cause. HardwareSage correlates multiple measurements and produces a diagnostic report that distinguishes observations, possible causes, and recommended checks.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit"/>
+  <img src="https://img.shields.io/badge/ESP32-Integration%20in%20progress-E7352C?logo=espressif&logoColor=white" alt="ESP32"/>
+  <img src="https://img.shields.io/badge/Testing-5%2F5%20scenarios%20passed-brightgreen" alt="Test results"/>
+  <img src="https://img.shields.io/badge/Status-Prototype-orange" alt="Prototype"/>
+</p>
 
-The initial target is a low-voltage DC motor and driver board. It provides repeatable operating conditions and safe, measurable fault scenarios. The same architecture could later monitor other embedded boards after adapting the sensors and baseline model. Planned features
+## Overview
 
-Live voltage, current, power, temperature, and optional vibration monitoring.
-Timestamped telemetry collection and visual trends.
-Rule-based alerts for explicit operating limits.
-Anomaly detection trained on normal operating data.
-GenAI-generated explanations tied to actual readings and documented fault signatures.
-Diagnostic reports showing severity, evidence, possible causes, and next tests.
-Evaluation against labeled fault-injection runs and a rule-based baseline. Diagnostic boundary: An anomaly score shows that behavior differs from the baseline. The assistant presents hypotheses; it cannot prove that a specific component failed solely from these sensors. Immediate protection decisions must come from deterministic firmware rules, independently of the GenAI service. System architecture
+The **Smart Hardware Health Monitor & Failure Analysis Assistant** is a prototype designed to monitor electronic hardware operating conditions, identify potentially abnormal measurements, and generate structured diagnostic reports.
 
-The controller samples sensors and sends timestamped records to the backend.
-The backend stores readings and computes rolling features such as mean current, voltage sag, temperature slope, and vibration RMS.
-Rules check known limits; an anomaly model compares recent behavior with healthy runs.
-The assistant receives a compact evidence packet and a curated troubleshooting guide. It returns a structured report with uncertainty and suggested verification steps. Hardware plan Part Purpose Notes ESP32 development board Data acquisition and Wi-Fi Use a stable USB supply during development. INA219 module Bus voltage and shunt current Place in series with the monitored low-voltage supply; check the module's shunt and current rating. Contact temperature sensor Driver or board temperature Attach near the component of interest, with electrical insulation as needed. Small DC motor and suitable driver Device under test Use a separate, appropriately rated motor supply. Accelerometer, optional Motor vibration Add after electrical and thermal sensing work reliably. BME280, optional Ambient temperature and humidity Ambient temperature is context, not a direct measurement of driver junction temperature.
-Example signal map Signal Connection INA219 SDA/SCL ESP32 I²C bus, for example GPIO 21/22 on a compatible development board Temperature sensor GPIO or I²C according to the selected device Accelerometer SDA/SCL Shared I²C bus if supported, with a nonconflicting address Motor supply Through the correctly rated current-sensing path to the driver ESP32 ground Common reference with the monitored low-voltage circuit where required
+The project combines embedded hardware monitoring concepts with Python-based data analysis. It currently supports simulated telemetry, an interactive Streamlit dashboard, statistical anomaly detection, rule-based diagnostics, severity classification, and automated fault-scenario evaluation.
 
-Verify the exact board pinout, voltage levels, sensor addresses, supply limits, and driver wiring before assembly. Do not connect a motor directly to an ESP32 GPIO or use mains-powered equipment for fault injection. Software stack (planned) Layer Proposed choice Firmware ESP-IDF or Arduino framework for ESP32 Transport Local Wi-Fi with HTTP or MQTT Backend Python and FastAPI Storage SQLite for a single-device prototype Analysis Python, pandas, scikit-learn Dashboard Streamlit GenAI Configurable LLM API with structured JSON output
+The planned hardware implementation uses an ESP32 microcontroller with voltage/current monitoring and temperature sensing. A future extension will explore semiconductor device analysis using Sentaurus TCAD simulation data.
 
-These choices are a starting point, not a claim that the corresponding modules are already implemented. Keep API credentials only on the backend, in environment variables; never embed them in firmware or commit them to Git.
+The goal is to build a demonstrable engineering project at the intersection of **Embedded Systems, Hardware Diagnostics, Data Analysis, and Semiconductor Device Engineering**.
 
-The LLM input should contain the numerical evidence, operating state, model output, and relevant troubleshooting notes. Reject invented measurements and require the report to say when evidence is insufficient. Fault scenarios for the prototype Scenario Expected observable evidence Caveat Healthy operation Stable readings within the normal range Capture at multiple loads. Increased mechanical load Often higher current and temperature Confirm under controlled, limited load. Supply undervoltage Lower measured bus voltage Behavior depends on the motor driver. Cooling restriction Rising board temperature Do not exceed rated temperatures. Added vibration Change in vibration features Requires the optional accelerometer. Sensor disconnect Missing or invalid readings Treat as a sensor fault, not a DUT fault.
+## Key Features
 
-Use controlled, reversible conditions and stop each run before equipment ratings are approached. Label data by the injected condition, not by an assumed internal failure mechanism. Development roadmap
+- **Live-style telemetry dashboard:** Displays voltage, current, power, and temperature measurements.
+- **Telemetry simulation:** Generates synthetic sensor readings for development without physical hardware.
+- **Time-series visualization:** Uses Plotly to visualize changes in monitored parameters.
+- **Statistical anomaly detection:** Uses an Isolation Forest model when enough readings are available.
+- **Rule-based fault analysis:** Identifies configured voltage, current, and temperature threshold violations.
+- **Severity classification:** Assigns `INFO`, `WARNING`, or `CRITICAL` based on configurable demonstration thresholds.
+- **Diagnostic report generation:** Produces structured reports containing observations, findings, recommended tests, and limitations.
+- **Report export:** Supports downloading diagnostic reports from the dashboard.
+- **Automated testing:** Checks diagnostic findings and severity classification against predefined fault scenarios.
+- **ESP32 serial reader:** A Python module has been prepared to receive newline-delimited JSON telemetry over USB serial.
 
-Hardware bring-up: Read each sensor independently and log calibrated readings with units.
-Data collection: Capture repeated healthy runs across idle, start-up, and steady operation; record operating state and load.
-Rules: Add missing-sensor, overcurrent, undervoltage, and overtemperature alerts with documented limits.
-Fault dataset: Collect repeated runs for each controlled condition, with run IDs and timestamps.
-Anomaly model: Train on healthy runs, select a threshold using validation runs, and evaluate on held-out runs.
-Assistant: Generate evidence-linked reports from structured inputs and a small fault guide.
-Dashboard: Show trends, alerts, annotated events, and downloadable reports.
-Evaluation: Compare model and rules; publish plots, confusion matrix, latency, and limitations. Planned repository layout HardwareSage/ ├── firmware/ # ESP32 sensor acquisition and transport ├── backend/ # Ingestion, storage, alerts, report API ├── analysis/ # Feature extraction, training, evaluation ├── dashboard/ # Live plots and reports ├── docs/ # Wiring, calibration, fault guide, architecture ├── data/README.md # Dataset format and collection procedure ├── tests/ # Parser, feature, and report-contract tests ├── .env.example # Variable names only; no secrets └── README.md Reproducibility target: Once implementation exists, document the exact board variant, firmware commands, wiring diagram, sensor calibration, Python dependencies, backend/dashboard start commands, and a small sample dataset here. No installation commands are listed yet because the project code has not been created. Evaluation plan Split data by run, rather than randomly splitting adjacent samples from the same run. Report:
-Fault detection precision, recall, F1, and false alarms per hour.
-Results for each injected condition and for normal operation.
-Detection delay from the start of a condition to an alert.
-Performance under different loads and ambient temperatures.
-Diagnostic quality: whether the report cites real measurements, expresses uncertainty, and proposes discriminating tests.
-A comparison with simple threshold rules using the same held-out runs. Never present generated or synthetic data as a physical experiment. Publish the sampling interval, sensor calibration method, labeling method, train/test split, and raw run metadata alongside any claimed results. VLSI and embedded-systems relevance This project applies measurement, power monitoring, thermal analysis, signal processing, fault classification, and evidence-based debugging to a physical embedded system. It is a practical bridge between hardware engineering and GenAI. The prototype monitors board-level behavior; chip-level fault localization would require additional instrumentation and validation. Future extensions
-Deploy a compact anomaly model on the microcontroller for offline detection.
-Add a PCB or regulator health-monitoring target with rail ripple and thermal measurements.
-Link reports to schematics, datasheets, and board-specific troubleshooting procedures.
-Track drift across devices and operating conditions. References
-Espressif ESP-IDF getting started guide
-Texas Instruments INA219 product and documentation
-Bosch Sensortec BME280 product page
-Edge Impulse anomaly detection overview
+> **Current status:** The software prototype and simulated fault evaluation are implemented. Physical ESP32/sensor integration, real-hardware validation, and Sentaurus TCAD integration remain planned work. The current diagnostic engine is rule-based, not a generative AI diagnostic system.
+
+## System Architecture
+
+```text
+              Synthetic Telemetry
+                      |
+                      v
+             Telemetry Data (CSV)
+                      |
+                      v
+             Python Data Pipeline
+                      |
+             +--------+--------+
+             |                 |
+             v                 v
+      Anomaly Detection   Rule-Based Analysis
+             |                 |
+             +--------+--------+
+                      |
+                      v
+              Severity Assessment
+                      |
+                      v
+              Diagnostic Report
+                      |
+                      v
+             Streamlit Dashboard
+```
+
+### Planned hardware data path
+
+```text
+Voltage / Current Sensor + Temperature Sensor
+                      |
+                      v
+                    ESP32
+                      |
+                 USB Serial
+                      |
+                      v
+             Python Serial Reader
+                      |
+                      v
+              Telemetry Pipeline
+                      |
+                      v
+           Dashboard and Diagnostics
+```
+
+The serial reader is implemented and import-tested. End-to-end communication with a physical ESP32 has not yet been validated.
+
+## Technology Stack
+
+| Component | Technology |
+|---|---|
+| Programming language | Python |
+| Dashboard | Streamlit |
+| Data processing | Pandas, NumPy |
+| Visualization | Plotly |
+| Anomaly detection | Scikit-learn Isolation Forest |
+| Serial communication | PySerial |
+| Diagnostic logic | Python rule-based engine |
+| Embedded platform | ESP32 — integration pending |
+| Planned current/voltage sensing | INA219 |
+| Planned temperature sensing | DS18B20 |
+| Planned semiconductor analysis | Synopsys Sentaurus TCAD |
+
+## Project Structure
+
+```text
+hardware-health-ai/
+│
+├── app/
+│   ├── dashboard.py
+│   ├── simulate_sensor.py
+│   ├── diagnostics.py
+│   └── serial_reader.py
+│
+├── firmware/
+│   └── esp32_setup_test.ino
+│
+├── data/
+│   └── simulated_telemetry.csv
+│
+├── reports/
+│   └── fault_evaluation_results.csv
+│
+├── tests/
+│   ├── test_diagnostics.py
+│   ├── fault_scenarios.csv
+│   └── evaluate_faults.py
+│
+├── requirements.txt
+├── .gitignore
+├── .env
+└── README.md
+```
+
+*Note: Generated CSV files and `.env` may be excluded from Git by `.gitignore`. The tree represents the intended project organization; only files actually committed will appear in the repository.*
+
+## Getting Started
+
+### 1. Prerequisites
+
+Install the following:
+
+- Python 3.11 or a compatible Python version
+- Git
+- Visual Studio Code or another Python editor
+
+Physical hardware is not required to run the software prototype.
+
+### 2. Clone the repository
+
+Replace the URL below with your actual public repository URL if the repository name or visibility differs.
+
+```bash
+git clone https://github.com/Tanya-0911/hardware-health-ai.git
+cd hardware-health-ai
+```
+
+### 3. Create and activate a virtual environment
+
+On Windows:
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+### 4. Install dependencies
+
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+If dependencies have not yet been recorded in `requirements.txt`, install the packages used by the application:
+
+```bash
+pip install streamlit pandas numpy plotly scikit-learn pyserial
+```
+
+### 5. Generate simulated telemetry
+
+Open a terminal in the project root and run:
+
+```bash
+python app/simulate_sensor.py
+```
+
+The simulator generates synthetic voltage, current, power, and temperature readings and saves them to:
+
+```text
+data/simulated_telemetry.csv
+```
+
+Keep the simulator running while you explore the dashboard.
+
+### 6. Launch the dashboard
+
+Open another terminal, activate the same virtual environment, and run:
+
+```bash
+streamlit run app/dashboard.py
+```
+
+Open the local URL printed in the terminal by Streamlit.
+
+The dashboard displays the available readings, time-series charts, anomaly information, and diagnostic reporting interface.
+
+### 7. Generate a diagnostic report
+
+Use the **Generate Diagnostic Report** button in the dashboard.
+
+The report includes:
+
+- Observed voltage, current, power, and temperature
+- Severity classification
+- Detected rule-based findings
+- Recommended next tests
+- Limitations and safety notes
+
+The current report generation uses local rules and does not require an OpenAI API key.
+
+## Diagnostic and Severity Logic
+
+The prototype uses illustrative thresholds to demonstrate how measurement-based diagnostics can work.
+
+| Parameter | Illustrative normal range | Warning condition | Critical condition |
+|---|---|---|---|
+| Voltage | 4.8–5.2 V | Below 4.8 V or above 5.2 V | Below 4.5 V or above 5.5 V |
+| Current | At or below 170 mA | Above 170 mA | Above 200 mA |
+| Temperature | At or below 36 °C | Above 36 °C | Above 45 °C |
+
+Severity is assigned according to the highest applicable configured threshold:
+
+- `INFO` — no configured warning or critical threshold is crossed and no statistical anomaly is flagged.
+- `WARNING` — at least one warning threshold is crossed, or the anomaly detector flags the reading.
+- `CRITICAL` — at least one critical threshold is crossed.
+
+**These are demonstration thresholds, not universal hardware safety limits.** They must be validated against the actual sensor accuracy, power supply, monitored load, and component datasheets before real hardware use.
+
+## Anomaly Detection
+
+The dashboard includes a statistical anomaly detection stage using Scikit-learn's Isolation Forest.
+
+The model is intended to help identify measurements that differ from the observed data distribution. It complements the rule-based diagnostic engine rather than replacing it.
+
+An anomaly flag does not, by itself, establish that a component has failed. Performance on synthetic data also does not establish detection accuracy on real hardware.
+
+## Automated Testing
+
+Run the unit tests:
+
+```bash
+python -m unittest tests.test_diagnostics -v
+```
+
+Run the fault-scenario evaluator:
+
+```bash
+python tests/evaluate_faults.py
+```
+
+### Current evaluation results
+
+| Test | Result |
+|---|---:|
+| Diagnostic unit tests | 3/3 passed |
+| Predefined fault scenarios | 5/5 passed |
+| Finding checks | 5/5 passed |
+| Severity checks | 5/5 passed |
+| Overall synthetic rule-check pass rate | 100% |
+
+The five predefined scenarios cover normal readings, high current, high temperature, low voltage, and a combined warning-level fault.
+
+The evaluator writes its results to:
+
+```text
+reports/fault_evaluation_results.csv
+```
+
+These results demonstrate consistency with the configured rules on the tested synthetic inputs. They are **not a measurement of real-world fault-detection accuracy**. The current scenario set also needs a critical-level test to verify the `CRITICAL` path automatically.
+
+## ESP32 Integration
+
+The planned hardware version will use an ESP32 to collect telemetry from external sensors.
+
+### Planned components
+
+- ESP32 development board
+- INA219 voltage/current monitoring module
+- DS18B20 temperature sensor
+- Suitable low-voltage test load
+- Breadboard and jumper wires
+- Appropriate power supply and required pull-up resistor
+
+### Planned communication format
+
+The Python serial reader expects one JSON telemetry message per line, for example:
+
+```json
+{
+  "voltage_v": 5.0,
+  "current_ma": 100.0,
+  "power_mw": 500.0,
+  "temperature_c": 30.0,
+  "status": "NORMAL"
+}
+```
+
+The ESP32 firmware will need to transmit a compatible format over USB serial, normally at 115200 baud.
+
+### Planned integration milestones
+
+1. Implement and test the ESP32 sensor-reading firmware.
+2. Transmit newline-delimited JSON readings over USB serial.
+3. Verify the serial data format and sensor values.
+4. Connect the serial reader to the dashboard.
+5. Compare simulated and measured telemetry.
+6. Validate thresholds and diagnostic behavior using safe, controlled tests.
+
+Physical integration and real-sensor validation are not yet complete.
+
+## Future Work
+
+### 1. Embedded hardware integration
+Connect the ESP32 to the monitoring sensors and verify the full sensor-to-dashboard pipeline.
+
+### 2. Improved fault evaluation
+Add critical-level scenarios, boundary-value tests, invalid sensor readings, and tests for missing or malformed serial data.
+
+### 3. Semiconductor device analysis
+Extend the project to process Sentaurus TCAD MOSFET simulation results, such as transfer characteristics (\(I_D\) versus \(V_G\)).
+
+Potential device metrics include threshold voltage, on-current, off-current, transconductance, and subthreshold swing. Extraction methods will need to be chosen and validated for the simulated device and its bias conditions.
+
+### 4. GenAI-assisted failure analysis
+Explore an optional AI-assisted explanation layer that summarizes measured evidence, suggests further diagnostic tests, and explains potential failure mechanisms. This extension will require a configured model/API and careful validation.
+
+### 5. Validation and reporting
+Compare predictions with known test cases, document false positives and false negatives, and evaluate the system on measured data before making reliability claims.
+
+## Safety Considerations
+
+- Use only suitable low-voltage DC supplies for initial testing.
+- Do not connect mains voltage or unsafe fault-injection circuits to the prototype.
+- Do not route monitored load current through the ESP32's 3.3 V pin.
+- Verify sensor wiring, current ratings, grounding, and component datasheets.
+- Treat thresholds as provisional until validated.
+- Do not use this prototype as a safety interlock or as the sole basis for operating decisions.
+
+## Limitations
+
+- Current telemetry can be simulated rather than measured.
+- The diagnostic engine is rule-based and is not currently a generative AI system.
+- Statistical anomalies do not prove component failure.
+- Thresholds are illustrative and are not validated for a specific physical circuit.
+- Physical ESP32/sensor integration has not been verified.
+- Sentaurus TCAD integration remains future work.
+- The current automated evaluation covers five predefined synthetic scenarios.
+
+## Project Summary
+
+This project demonstrates a modular approach to hardware health monitoring by combining telemetry generation, visualization, statistical anomaly detection, rule-based diagnostics, severity classification, and automated testing.
+
+Its next development stage is to connect real ESP32 sensor data to the existing software pipeline, validate the diagnostics against controlled measurements, and explore semiconductor device analysis and AI-assisted failure explanations.
