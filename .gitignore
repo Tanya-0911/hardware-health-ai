@@ -5,3 +5,4 @@
 __pycache__/
 *.py[cod]
 data/*.csv
+!reports/fault_evaluation_results.csv
