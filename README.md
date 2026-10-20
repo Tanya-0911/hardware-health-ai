@@ -357,14 +357,6 @@ Compare predictions with known test cases, document false positives and false ne
 - Sentaurus TCAD integration remains future work.
 - The current automated evaluation covers five predefined synthetic scenarios.
 
-## Author
-
-**Tanya Sinha**
-
-GitHub: [Tanya-0911](https://github.com/Tanya-0911)
-
----
-
 ## Project Summary
 
 This project demonstrates a modular approach to hardware health monitoring by combining telemetry generation, visualization, statistical anomaly detection, rule-based diagnostics, severity classification, and automated testing.
