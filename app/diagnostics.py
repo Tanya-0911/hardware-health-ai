@@ -24,6 +24,7 @@ def analyze_readings(readings, data_source="simulated"):
     )
 
     anomaly = readings.get("anomaly_detected", False)
+
     if isinstance(anomaly, str):
         anomaly = anomaly.strip().lower() in {
             "true", "yes", "1"
@@ -40,7 +41,7 @@ def analyze_readings(readings, data_source="simulated"):
     critical_reasons = []
     warning_reasons = []
 
-    # Illustrative critical thresholds only.
+    # Illustrative critical thresholds.
     if voltage < 4.5 or voltage > 5.5:
         critical_reasons.append(
             "Voltage outside the illustrative critical range."
@@ -64,12 +65,12 @@ def analyze_readings(readings, data_source="simulated"):
 
     if current > 170:
         warning_reasons.append(
-            "Current is above the configured normal range."
+            "Current exceeds the configured warning threshold of 170 mA."
         )
 
     if temperature > 36:
         warning_reasons.append(
-            "Temperature is above the configured normal range."
+            "Temperature exceeds the configured warning threshold of 36°C."
         )
 
     if critical_reasons:
@@ -113,14 +114,20 @@ def analyze_readings(readings, data_source="simulated"):
         )
 
     if current > 170:
-        findings.append("High current detected.")
+        findings.append(
+            "High current detected: current exceeds the "
+            "configured warning threshold of 170 mA."
+        )
         recommendations.append(
             "Inspect the load for excessive current draw, "
             "short circuits, or unexpected operating conditions."
         )
 
     if temperature > 36:
-        findings.append("Elevated temperature detected.")
+        findings.append(
+            "Elevated temperature detected: temperature exceeds "
+            "the configured warning threshold of 36°C."
+        )
         recommendations.append(
             "Check sensor placement, airflow, and operating "
             "conditions; compare against the component datasheet."
@@ -165,15 +172,11 @@ def analyze_readings(readings, data_source="simulated"):
     # --------------------------------------------------
     # 5. Build final report
     # --------------------------------------------------
-
-# severity_text = "\n".join(
-#     f"- {reason}" for reason in severity_reasons
-# )
-
     return f"""
 # Hardware Diagnostic Report
 
 **Data source:** {source}
+
 ## Severity: {severity}
 
 {severity_text}
